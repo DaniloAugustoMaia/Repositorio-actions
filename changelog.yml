@@ -1,0 +1,45 @@
+name: Changelog
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar codigo com historico completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gerar CHANGELOG.md
+        run: |
+          {
+            echo "# Changelog do brigadeiro.html"
+            echo
+            echo "## Novidades"
+            git log --pretty=tformat:"- %s (%h, %ad)" --date=short --grep="^feat" -- brigadeiro.html
+            echo
+            echo "## Correcoes"
+            git log --pretty=tformat:"- %s (%h, %ad)" --date=short --grep="^fix" -- brigadeiro.html
+            echo
+            echo "## Outras mudancas"
+            git log --pretty=tformat:"- %s (%h, %ad)" --date=short --invert-grep --grep="^feat" --grep="^fix" -- brigadeiro.html
+          } > CHANGELOG.md
+
+      - name: Mostrar no log
+        run: cat CHANGELOG.md
+
+      - name: Mostrar no resumo da execucao
+        run: cat CHANGELOG.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG.md
